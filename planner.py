@@ -2,8 +2,6 @@ import numpy as np
 import scipy.spatial
 from matplotlib.path import Path
 
-from car import car_params
-
 #### Define base parameters that everything else is derived from 
 
 planner_params = {
@@ -15,8 +13,8 @@ planner_params = {
 #### calculate parameters that depend on these params and the case we are solving ####
 
 def calculate_obstacle_grid_and_kdtree(planner_params, case_params):
-    grid_width = int((planner_params["xmax"] - planner_params["xmin"]) // planner_params["xy_resolution"] + 1)
-    grid_height = int((planner_params["ymax"] - planner_params["ymin"]) // planner_params["xy_resolution"] + 1)
+    grid_width = int((case_params["xmax"] - case_params["xmin"]) // planner_params["xy_resolution"] + 1)
+    grid_height = int((case_params["ymax"] - case_params["ymin"]) // planner_params["xy_resolution"] + 1)
 
     grid = np.zeros((grid_width, grid_height))
     obstacle_x_idx = []
@@ -53,5 +51,64 @@ def calculate_obstacle_grid_and_kdtree(planner_params, case_params):
 
     return grid, obstacle_kdtree
 
-if __name__ == "__main__":
+def run(planner_params, case_params, car_params):
+
+    start_grid_index = [round(case_params["x0"] /  planner_params["xy_resolution"]), \
+                        round(case_params["y0"] /  planner_params["xy_resolution"]), \
+                        round(case_params["yaw0"]/ planner_params["yaw_resolution"])]
+
+    goal_grid_index = [round(case_params["xf"] /  planner_params["xy_resolution"]), \
+                       round(case_params["yf"] /  planner_params["xy_resolution"]), \
+                       round(case_params["yawf"]/ planner_params["yaw_resolution"])]
+
+    start_node = {
+        "grid_index": start_grid_index,
+        "traj": [[case_params["x0"], case_params["y0"], case_params["yaw0"]]],
+        "cost": 0.0,
+        "parent_index": start_grid_index,
+    }
+
+    goal_node = {
+        "grid_index": goal_grid_index,
+        "traj": [[case_params["xf"], case_params["y0"], case_params["yaw0"]]],
+        "cost": 0.0,
+        "parent_index": goal_grid_index,
+    }
+
+def holonomic_cost(planner_params, goal_non_holonomic_node, grid, ):
+
+    grid_index = [round(goal_non_holonomic_node["traj"][-1][0]/planner_params["xy_resolution"]), round(goal_non_holonomic_node["traj"][-1][1]/planner_params["xy_resolution"])]
     
+    goal_holonomic_node = {
+        "grid_index": grid_index,
+        "cost": 0,
+        "parent_index": grid_index
+    }
+
+    holonomic_motion_commands = [[-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1]]
+
+    def is_holonomic_node_valid(neighbour_node, grid)
+
+
+
+#### Example usage
+
+if __name__ == "__main__":
+
+    import matplotlib.pyplot as plt
+    from tpcap_utils import read, plot_case
+    from car import car_params
+
+    case_num = 1
+    case_params = read(f"tpcap_cases/Case{case_num}.csv")
+
+    # plot to be sure
+    plot_case(case_params, car_params, show=False, save=False)
+
+    # check out the data yourself!
+    grid, obstacle_kdtree = calculate_obstacle_grid_and_kdtree(planner_params, case_params)
+
+    plt.imshow(grid.T, cmap='gray', origin='lower', extent=(case_params["xmin"], case_params["xmax"], case_params["ymin"], case_params["ymax"]))
+    plt.savefig('obstacle_grid_overlayed_on_case.png')
+
+    print('fin')

@@ -26,7 +26,7 @@ def read(file: LiteralString):
             case_params["obs"].append(np.array(v[vs:vs + nv * 2]).reshape((nv, 2), order='A'))
     return case_params
 
-def plot_case(case_params, filename=None, show=False, save=True, bare=False):
+def plot_case(case_params, car_params, filename=None, show=False, save=True, bare=False):
     if filename is None:
         filename = 1
     plt.xlim(case_params["xmin"], case_params["xmax"])
@@ -40,9 +40,9 @@ def plot_case(case_params, filename=None, show=False, save=True, bare=False):
     if bare is False:
         plt.arrow(case_params["x0"], case_params["y0"], np.cos(case_params["yaw0"]), np.sin(case_params["yaw0"]), width=0.2, color = "gold")
         plt.arrow(case_params["xf"], case_params["yf"], np.cos(case_params["yawf"]), np.sin(case_params["yawf"]), width=0.2, color = "gold")
-        temp = get_corners(case_params["x0"], case_params["y0"], case_params["yaw0"])
+        temp = get_corners(car_params, case_params["x0"], case_params["y0"], case_params["yaw0"])
         plt.plot(temp[:, 0], temp[:, 1], linestyle='--', linewidth = 0.4, color = 'green')
-        temp = get_corners(case_params["xf"], case_params["yf"], case_params["yawf"])
+        temp = get_corners(car_params, case_params["xf"], case_params["yf"], case_params["yawf"])
         plt.plot(temp[:, 0], temp[:, 1], linestyle='--', linewidth = 0.4, color = 'red')
         plt.grid(linewidth = 0.2)
         plt.title(filename)
@@ -51,12 +51,12 @@ def plot_case(case_params, filename=None, show=False, save=True, bare=False):
         plt.axis('off')
 
     if save is True:
-        plt.savefig(f"images/{filename}.png", dpi=500)
+        plt.savefig(f"{filename}.png", dpi=500)
     if show is True:
         plt.show()
 
 if __name__ == "__main__":
-    
+
     case_num = 1
     case_params = read(f"TPCAP_demo/BenchmarkCases/Case{case_num}.csv")
 
