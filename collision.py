@@ -102,3 +102,41 @@ def is_point_in_polygons(point, polygons):
             return True
 
     return False
+
+def grid_traj_collision_check(car_params, traj, obstacles, obstacle_kdtree):
+
+    collision = False
+    for state in traj:
+        x, y, yaw = state
+
+        # check bubble fast
+        cx = x + car_params["wheel_base"]/2 * np.cos(yaw)
+        cy = y + car_params["wheel_base"]/2 * np.sin(yaw)
+        pointsInObstacle = obstacle_kdtree.query_ball_point([cx, cy], car_params["bubble_radius"])
+
+        if not pointsInObstacle:
+            continue 
+
+        # check true collision
+        points = get_corners(x, y, yaw)[:-1]
+
+        # check if any point of car is in any polygon
+        violation = np.array([0])
+        for point in points:
+            violation += is_point_in_polygons(point, obstacles)
+        vehicle_in_obstacle = np.clip(violation, a_min=0, a_max=1)
+
+        # check if any point of polygon is in car
+        violation = np.array([0])
+        vec_obstacles = np.vstack(obstacles)
+        for point in vec_obstacles:
+            violation += is_point_in_polygons(point, [points])
+        obstacle_in_vehicle = np.clip(violation, a_min=0, a_max=1)
+
+        # check both criteria
+        collision = np.logical_or(obstacle_in_vehicle, vehicle_in_obstacle)
+
+        if collision == True:
+            return True
+
+    return False

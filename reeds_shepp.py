@@ -3,12 +3,78 @@
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+from heapdict import heapdict
+from collision import grid_traj_collision_check
 
 # parameters initiation
 STEP_SIZE = 0.2
 MAX_LENGTH = 1000.0
 PI = math.pi
 
+
+def reeds_shepp_node(planner_params, car_params, current_node, goal_node, obstacles, obstacle_kdtree, rs_step_size=1):
+
+    start_x, start_y, start_yaw = current_node["traj"][-1][0], current_node["traj"][-1][1], current_node["traj"][-1][2]
+    goal_x, goal_y, goal_yaw = goal_node["traj"][-1][0], goal_node["traj"][-1][1], goal_node["traj"][-1][2]
+
+    # instantaneous radius of curvature for maximum steer
+    radius = np.tan(car_params["max_steer"])/car_params["wheel_base"]
+
+    # find all possible reeds-shepp paths between current and goal node
+    rs_paths = calc_all_paths(start_x, start_y, start_yaw, goal_x, goal_y, goal_yaw, radius, rs_step_size)
+
+    # Check if reedsSheppPaths is empty -> means we fall back to searching
+    if not rs_paths:
+        return None
+
+    # Find path with lowest cost considering non-holonomic constraints
+    costQueue = heapdict()
+    for path in rs_paths:
+        costQueue[path] = reeds_shepp_cost(planner_params, car_params, current_node, path)
+
+    # Find first path in priority queue that is collision free
+    while len(costQueue)!=0:
+        path = costQueue.popitem()[0]
+        traj=[]
+        traj = [[path.x[k],path.y[k],path.yaw[k]] for k in range(len(path.x))]
+        if not grid_traj_collision_check(traj, obstacles, obstacle_kdtree):
+            cost = reeds_shepp_cost(current_node, path, car_params["max_steer"])
+            return Node(goalNode.gridIndex ,traj, None, None, cost, index(currentNode))
+
+
+def reeds_shepp_cost(planner_params, car_params, current_node, path):
+    cost = current_node["cost"]
+
+    # distance cost
+    for i in path.lengths:
+        if i >= 0:
+            cost += 1
+        else:
+            cost += abs(i) * planner_params["reverse_cost"]
+
+    # direction change cost
+    for i in range(len(path.lengths)-1):
+        if path.lengths[i] * path.lengths[i+1] < 0:
+            cost += planner_params["direction_change_cost"]
+    
+    # steering angle cost
+    for i in path.ctypes:
+        # chec types which are not straight lines
+        if i!="S":
+            cost += car_params['max_steer'] * planner_params["steer_angle_cost"]
+    
+    # Steering Angle change cost
+    turnAngle=[0.0 for _ in range(len(path.ctypes))]
+    for i in range(len(path.ctypes)):
+        if path.ctypes[i] == "R":
+            turnAngle[i] = - car_params["max_steer"]
+        if path.ctypes[i] == "WB":
+            turnAngle[i] = car_params["max_steer"]
+
+    for i in range(len(path.lengths)-1):
+        cost += abs(turnAngle[i+1] - turnAngle[i]) * planner_params["steer_angle_change_cost"]
+
+    return cost
 
 # class for PATH element
 class PATH:
