@@ -1,6 +1,9 @@
+import heapq
 import numpy as np
 import scipy.spatial
 from matplotlib.path import Path
+
+from holonomic_cost_map import calculate_holonomic_cost_map
 
 #### Define base parameters that everything else is derived from 
 
@@ -13,6 +16,22 @@ planner_params = {
 #### calculate parameters that depend on these params and the case we are solving ####
 
 def calculate_obstacle_grid_and_kdtree(planner_params, case_params):
+    """
+    Here we calculate the grid and where the obstacles lie within it, according to the resolutions of
+    the planner. We also create a scipy.spatial.KDTree data structure for the discretized obstacle positions
+    in the grid, this allows fast calculation of ball distances to all obstacles at runtime as a first 
+    check for collision. If a collision is then detected according to this we calculate the true collisions.
+    This ends up saving a lot of time when we are not close to obstacles.
+
+    Args:
+        planner_params (Dict): defining parameters of the hybrid A* planner
+        case_params (Dict): defining parameters of the environment we are in
+
+    Returns:
+        grid (): _description_
+        grid_bounds (): _description_
+        obstacle_kdtree (): _description_
+    """
     grid_width = int((case_params["xmax"] - case_params["xmin"]) // planner_params["xy_resolution"] + 1)
     grid_height = int((case_params["ymax"] - case_params["ymin"]) // planner_params["xy_resolution"] + 1)
 
@@ -42,24 +61,30 @@ def calculate_obstacle_grid_and_kdtree(planner_params, case_params):
     obstacle_y_idx = np.array(obstacle_y_idx)
 
     # calculate the map bounds in terms of the grid
-    grid_xmin = round(case_params["xmin"] / planner_params["xy_resolution"])
-    grid_ymin = round(case_params["ymin"] / planner_params["xy_resolution"])
+    grid_bounds = {}
+    grid_bounds["xmax"] = round(case_params["xmax"] / planner_params["xy_resolution"])
+    grid_bounds["xmin"] = round(case_params["xmin"] / planner_params["xy_resolution"])
+    grid_bounds["ymax"] = round(case_params["ymax"] / planner_params["xy_resolution"])
+    grid_bounds["ymin"] = round(case_params["ymin"] / planner_params["xy_resolution"])
+    grid_bounds["yawmax"] = round(2*np.pi / planner_params["yaw_resolution"])
+    grid_bounds["yawmin"] = round(0.0 / planner_params["yaw_resolution"])
 
-    obstacle_x = (obstacle_x_idx + 0.5) * planner_params["xy_resolution"] + grid_xmin * planner_params["xy_resolution"]
-    obstacle_y = (obstacle_y_idx + 0.5) * planner_params["xy_resolution"] + grid_ymin * planner_params["xy_resolution"]
+    obstacle_x = (obstacle_x_idx + 0.5) * planner_params["xy_resolution"] + grid_bounds["xmin"] * planner_params["xy_resolution"]
+    obstacle_y = (obstacle_y_idx + 0.5) * planner_params["xy_resolution"] + grid_bounds["ymin"] * planner_params["xy_resolution"]
     obstacle_kdtree = scipy.spatial.KDTree([[x, y] for x, y in zip(obstacle_x, obstacle_y)])
 
-    return grid, obstacle_kdtree
+    return grid, grid_bounds, obstacle_kdtree
+
 
 def run(planner_params, case_params, car_params):
 
-    start_grid_index = [round(case_params["x0"] /  planner_params["xy_resolution"]), \
+    start_grid_index = (round(case_params["x0"] /  planner_params["xy_resolution"]), \
                         round(case_params["y0"] /  planner_params["xy_resolution"]), \
-                        round(case_params["yaw0"]/ planner_params["yaw_resolution"])]
+                        round(case_params["yaw0"]/ planner_params["yaw_resolution"]))
 
-    goal_grid_index = [round(case_params["xf"] /  planner_params["xy_resolution"]), \
+    goal_grid_index = (round(case_params["xf"] /  planner_params["xy_resolution"]), \
                        round(case_params["yf"] /  planner_params["xy_resolution"]), \
-                       round(case_params["yawf"]/ planner_params["yaw_resolution"])]
+                       round(case_params["yawf"]/ planner_params["yaw_resolution"]))
 
     start_node = {
         "grid_index": start_grid_index,
@@ -75,19 +100,10 @@ def run(planner_params, case_params, car_params):
         "parent_index": goal_grid_index,
     }
 
-def holonomic_cost(planner_params, goal_non_holonomic_node, grid, ):
+    # calculate the costmap for the A* solution to the environment, which we guide the non-holonomic search with
+    holonomic_cost_map = calculate_holonomic_cost_map(planner_params, goal_node, grid, grid_bounds)
 
-    grid_index = [round(goal_non_holonomic_node["traj"][-1][0]/planner_params["xy_resolution"]), round(goal_non_holonomic_node["traj"][-1][1]/planner_params["xy_resolution"])]
-    
-    goal_holonomic_node = {
-        "grid_index": grid_index,
-        "cost": 0,
-        "parent_index": grid_index
-    }
 
-    holonomic_motion_commands = [[-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1]]
-
-    def is_holonomic_node_valid(neighbour_node, grid)
 
 
 
@@ -103,12 +119,49 @@ if __name__ == "__main__":
     case_params = read(f"tpcap_cases/Case{case_num}.csv")
 
     # plot to be sure
-    plot_case(case_params, car_params, show=False, save=False)
+    plot_case(case_params, car_params, show=False, save=False, bare=False)
 
     # check out the data yourself!
-    grid, obstacle_kdtree = calculate_obstacle_grid_and_kdtree(planner_params, case_params)
+    grid, grid_bounds, obstacle_kdtree = calculate_obstacle_grid_and_kdtree(planner_params, case_params)
 
-    plt.imshow(grid.T, cmap='gray', origin='lower', extent=(case_params["xmin"], case_params["xmax"], case_params["ymin"], case_params["ymax"]))
+    plt.imshow(grid.T, cmap='cividis_r', origin='lower', extent=(case_params["xmin"], case_params["xmax"], case_params["ymin"], case_params["ymax"]))
+
+    # lets plot the holonomic cost
+    start_grid_index = (round(case_params["x0"] /  planner_params["xy_resolution"]) - grid_bounds["xmin"], \
+                        round(case_params["y0"] /  planner_params["xy_resolution"]) - grid_bounds["ymin"], \
+                        round(case_params["yaw0"] / planner_params["yaw_resolution"]) - grid_bounds["yawmin"])
+
+    goal_grid_index = (round(case_params["xf"] /  planner_params["xy_resolution"]) - grid_bounds["xmin"], \
+                       round(case_params["yf"] /  planner_params["xy_resolution"]) - grid_bounds["ymin"], \
+                       round(case_params["yawf"] / planner_params["yaw_resolution"]) - grid_bounds["yawmin"])
+
+    start_node = {
+        "grid_index": start_grid_index,
+        "traj": [[case_params["x0"], case_params["y0"], case_params["yaw0"]]],
+        "cost": 0.0,
+        "parent_index": start_grid_index,
+    }
+
+    goal_node = {
+        "grid_index": goal_grid_index,
+        "traj": [[case_params["xf"], case_params["yf"], case_params["yawf"]]],
+        "cost": 0.0,
+        "parent_index": goal_grid_index,
+    }
+
+    # double check that the holonomic heuristic starts at end and goes from there.
+    holonomic_cost_map = calculate_holonomic_cost_map(planner_params, goal_node, grid, grid_bounds)
+    assert holonomic_cost_map[goal_grid_index[0], goal_grid_index[1]] == 0.0
+
+    plt.imshow(holonomic_cost_map.T, cmap='gray', origin='lower', extent=(case_params["xmin"], case_params["xmax"], case_params["ymin"], case_params["ymax"]))
+    cbar = plt.colorbar()
+    cbar.set_label('Cost Value', rotation=270, labelpad=15)
+    plt.scatter([(goal_grid_index[0] + grid_bounds["xmin"]) * planner_params["xy_resolution"]],
+                [(goal_grid_index[1] + grid_bounds["ymin"]) * planner_params["xy_resolution"]], linewidths=1.0, color="red")
+    plt.scatter([(start_grid_index[0] + grid_bounds["xmin"]) * planner_params["xy_resolution"]],
+                [(start_grid_index[1] + grid_bounds["ymin"]) * planner_params["xy_resolution"]], linewidths=1.0, color="green")
     plt.savefig('obstacle_grid_overlayed_on_case.png')
+
+    run(planner_params, case_params, car_params)
 
     print('fin')

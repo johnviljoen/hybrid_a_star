@@ -48,7 +48,9 @@ def plot_case(case_params, car_params, filename=None, show=False, save=True, bar
         plt.title(filename)
         plt.xlabel('X / m', fontsize = 14)
         plt.ylabel('Y / m', fontsize = 14)
+    else:
         plt.axis('off')
+
 
     if save is True:
         plt.savefig(f"{filename}.png", dpi=500)
