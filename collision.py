@@ -43,12 +43,14 @@ def is_traj_valid(car_params, traj, polygons, obs_kdtree):
 
     return True
 
-
 def is_point_in_polygons(point, polygons):
 
     point_shifted_right = np.copy(point)
     point_shifted_right[0] += 1e2
     line = np.vstack([point, point_shifted_right])
+
+    # polygons need start appended to end
+    polygons = [np.vstack([p,p[0]]) for p in polygons]
 
     for _polygon in polygons:
 
@@ -118,7 +120,7 @@ def grid_traj_collision_check(car_params, traj, obstacles, obstacle_kdtree):
             continue 
 
         # check true collision
-        points = get_corners(x, y, yaw)[:-1]
+        points = get_corners(car_params, x, y, yaw)[:-1]
 
         # check if any point of car is in any polygon
         violation = np.array([0])

@@ -27,11 +27,18 @@ car_params["corners"] = np.array([
 planner_params = {
     "xy_resolution": 0.5,
     "yaw_resolution": np.deg2rad(5.0),
+    "steer_options": 5,
+    "movement_options": 2,   # resolution of action space at every timestep of the search
+    "max_movement": 1.0,          # max movement forwards or backwards at every timestep of the search
     "max_iter": 100,
-    "reverse_cost": 10,         # used in reeds shepp cost in reeds_shepp.py
-    "direction_change_cost": 1, # used in reeds shepp cost in reeds_shepp.py
-    "steer_angle_cost": 1,      # used in reeds shepp cost in reeds_shepp.py
-    "steer_angle_change_cost": 1 # ^ same
+    "reverse_cost": 1.0,         # used in reeds shepp cost in reeds_shepp.py
+    "direction_change_cost": 1.0, # used in reeds shepp cost in reeds_shepp.py
+    "steer_angle_cost": 0.5,      # used in reeds shepp cost in reeds_shepp.py
+    "steer_angle_change_cost": 0.5, # ^ same
+    "rs_step_size": 1.0,          # the rs step size used in calculating the reeds shepp trajectory at the leaves
+    "hybrid_cost": 1.0,            # used in holonomic_cost_map weighting in non_holonomic_search.py
+    "kinematic_simulation_length": 1,   # for the kinematic simulation node in non_holonomic_search.py
+    "kinematic_simulation_step": 1.0
 }
 
 #### Tests ####

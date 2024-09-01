@@ -11,8 +11,9 @@ STEP_SIZE = 0.2
 MAX_LENGTH = 1000.0
 PI = math.pi
 
+#### Functions for hybrid A* using RS ####
 
-def reeds_shepp_node(planner_params, car_params, current_node, goal_node, obstacles, obstacle_kdtree, rs_step_size=1):
+def reeds_shepp_node(planner_params, car_params, current_node, goal_node, obstacles, obstacle_kdtree):
 
     start_x, start_y, start_yaw = current_node["traj"][-1][0], current_node["traj"][-1][1], current_node["traj"][-1][2]
     goal_x, goal_y, goal_yaw = goal_node["traj"][-1][0], goal_node["traj"][-1][1], goal_node["traj"][-1][2]
@@ -21,25 +22,31 @@ def reeds_shepp_node(planner_params, car_params, current_node, goal_node, obstac
     radius = np.tan(car_params["max_steer"])/car_params["wheel_base"]
 
     # find all possible reeds-shepp paths between current and goal node
-    rs_paths = calc_all_paths(start_x, start_y, start_yaw, goal_x, goal_y, goal_yaw, radius, rs_step_size)
+    rs_paths = calc_all_paths(start_x, start_y, start_yaw, goal_x, goal_y, goal_yaw, radius, planner_params["rs_step_size"])
 
     # Check if reedsSheppPaths is empty -> means we fall back to searching
     if not rs_paths:
         return None
 
     # Find path with lowest cost considering non-holonomic constraints
-    costQueue = heapdict()
+    cost_queue = heapdict()
     for path in rs_paths:
-        costQueue[path] = reeds_shepp_cost(planner_params, car_params, current_node, path)
+        cost_queue[path] = reeds_shepp_cost(planner_params, car_params, current_node, path)
 
     # Find first path in priority queue that is collision free
-    while len(costQueue)!=0:
-        path = costQueue.popitem()[0]
+    while len(cost_queue)!=0:
+        path = cost_queue.popitem()[0]
         traj=[]
         traj = [[path.x[k],path.y[k],path.yaw[k]] for k in range(len(path.x))]
-        if not grid_traj_collision_check(traj, obstacles, obstacle_kdtree):
-            cost = reeds_shepp_cost(current_node, path, car_params["max_steer"])
-            return Node(goalNode.gridIndex ,traj, None, None, cost, index(currentNode))
+        if not grid_traj_collision_check(car_params, traj, obstacles, obstacle_kdtree):
+            cost = reeds_shepp_cost(planner_params, car_params, current_node, path)
+            node = {
+                "grid_index": goal_node["grid_index"],
+                "traj": traj,
+                "cost": cost,
+                "parent_index": current_node["grid_index"],
+            }
+            return node # Node(goalNode.gridIndex ,traj, None, None, cost, index(currentNode))
 
 
 def reeds_shepp_cost(planner_params, car_params, current_node, path):
@@ -75,6 +82,10 @@ def reeds_shepp_cost(planner_params, car_params, current_node, path):
         cost += abs(turnAngle[i+1] - turnAngle[i]) * planner_params["steer_angle_change_cost"]
 
     return cost
+
+
+#### The actual Reeds Shepp implementation ####
+
 
 # class for PATH element
 class PATH:
