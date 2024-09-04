@@ -15,7 +15,7 @@ def main(case_params, save_name=None):
     #### A lot of plotting to demonstrate whats happening ####
 
     # check out the data yourself!
-    grid, grid_bounds, obstacle_kdtree = calculate_obstacle_grid_and_kdtree(planner_params, case_params)
+    grid, grid_bounds, _ = calculate_obstacle_grid_and_kdtree(planner_params, case_params)
 
     # this plots the grid with its obstacles
     plt.imshow(grid.T, cmap='cividis_r', origin='lower', extent=(case_params["xmin"], case_params["xmax"], case_params["ymin"], case_params["ymax"]))
@@ -66,16 +66,16 @@ if __name__ == "__main__":
     from tpcap_utils import read
     from params import car_params, planner_params
 
+    # do the manual reverse park example
+    scenario_name = "reverse_park"
+    case_params = read(f"manual_cases/{scenario_name}.csv")
+    main(case_params, save_name=f"output/{scenario_name}")
+
     # this will run the TPCAP benchmark itself
     case_num = 1
     for case_num in range(1,21):
         scenario_name = f"Case{case_num}"
         case_params = read(f"tpcap_cases/{scenario_name}.csv")
         main(case_params, save_name=f"output/{scenario_name}")
-
-    # do the manual reverse park example
-    scenario_name = "reverse_park"
-    case_params = read(f"manual_cases/{scenario_name}.csv")
-    main(case_params, save_name=f"output/{scenario_name}")
 
     print('fin')
