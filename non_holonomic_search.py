@@ -113,9 +113,35 @@ def plan(planner_params, case_params, car_params):
                         open_set[simulated_node["grid_index"]] = simulated_node
                         cost_queue[simulated_node["grid_index"]] = max(simulated_node["cost"], planner_params["hybrid_cost"] * holonomic_cost_map[simulated_node["grid_index"][0]][simulated_node["grid_index"][1]])
 
+
+    # extract trajectory
+    def backtrack(start_node, goal_node, closed_set):
+
+        # Goal Node data
+        current_node_index = goal_node["parent_index"]
+        current_node = closed_set[current_node_index]
+        x=[]
+        y=[]
+        yaw=[]
+
+        # Iterate till we reach start node from goal node
+        while current_node_index != start_node["grid_index"]:
+            a, b, c = zip(*current_node["traj"])
+            x += a[::-1] 
+            y += b[::-1] 
+            yaw += c[::-1]
+            current_node_index = current_node["parent_index"]
+            current_node = closed_set[current_node_index]
+
+        traj = np.array([x[::-1], y[::-1], yaw[::-1]]).T
+        return traj
+
+    traj = backtrack(start_node, goal_node, closed_set)
+
+
     #### just for testing ####
     plot_case(case_params, car_params, save=False)
-    traj = np.vstack(rs_node["traj"])
+    # traj = np.vstack(rs_node["traj"])
     plt.plot(traj[:,0], traj[:,1])
     for state in traj:
         corners = get_corners(car_params, state[0], state[1], state[2])
@@ -126,6 +152,7 @@ def plan(planner_params, case_params, car_params):
 
     print('fin')
 
+
 if __name__ == "__main__":
 
     import matplotlib.pyplot as plt
@@ -133,10 +160,10 @@ if __name__ == "__main__":
     from tpcap_utils import read, plot_case    
     from transforms import get_corners
 
-    # case_num = 1
-    # case_params = read(f"tpcap_cases/Case{case_num}.csv")
+    case_num = 20
+    case_params = read(f"tpcap_cases/Case{case_num}.csv")
 
-    case_params = read("test_case.csv")
+    # case_params = read("test_case.csv")
 
     # plot to be sure
     plot_case(case_params, car_params, show=False, save=False, bare=False)
