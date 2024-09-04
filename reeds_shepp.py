@@ -1,4 +1,4 @@
-# yoink: https://github.com/zhm-real/CurvesGenerator/blob/master/reeds_shepp.py
+# source: https://github.com/zhm-real/CurvesGenerator/blob/master/reeds_shepp.py
 
 import math
 import numpy as np

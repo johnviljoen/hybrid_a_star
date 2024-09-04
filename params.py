@@ -12,22 +12,22 @@ car_params = {
 
 #### Testing equivalent setup to other hybrid a* ####
 
-LB = 2.3
-LF = 2.3
-max_steer = np.deg2rad(40)
-total_length = LB + LF
-wheel_base = 2.7
-width = 1.85
-front_hang = LF - wheel_base/2
-rear_hang = LB - wheel_base/2
+# LB = 2.3
+# LF = 2.3
+# max_steer = np.deg2rad(40)
+# total_length = LB + LF
+# wheel_base = 2.7
+# width = 1.85
+# front_hang = LF - wheel_base/2
+# rear_hang = LB - wheel_base/2
 
-car_params = {
-    "wheel_base": wheel_base,
-    "width": width,
-    "front_hang": front_hang,
-    "rear_hang": rear_hang,
-    "max_steer": max_steer,
-}
+# car_params = {
+#     "wheel_base": wheel_base,
+#     "width": width,
+#     "front_hang": front_hang,
+#     "rear_hang": rear_hang,
+#     "max_steer": max_steer,
+# }
 
 #### Testing end ####
 
