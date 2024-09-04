@@ -35,7 +35,7 @@ def plot_case(case_params, car_params, filename=None, show=False, save=True, bar
     plt.gca().set_axisbelow(True)
 
     for j in range(0, case_params["obs_num"]):
-        plt.fill(case_params["obs"][j][:, 0], case_params["obs"][j][:, 1], facecolor = 'k', alpha = 0.5)
+        plt.fill(case_params["obs"][j][:, 0], case_params["obs"][j][:, 1], facecolor = 'red', alpha = 0.5)
 
     if bare is False:
         plt.arrow(case_params["x0"], case_params["y0"], np.cos(case_params["yaw0"]), np.sin(case_params["yaw0"]), width=0.2, color = "gold")
@@ -50,7 +50,6 @@ def plot_case(case_params, car_params, filename=None, show=False, save=True, bar
         plt.ylabel('Y / m', fontsize = 14)
     else:
         plt.axis('off')
-
 
     if save is True:
         plt.savefig(f"{filename}.png", dpi=500)
