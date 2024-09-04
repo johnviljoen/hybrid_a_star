@@ -4,7 +4,9 @@ This repo aims to apply a SOTA Hybrid A* implementation to a constrained parking
 
 <!-- ![](output/Case20.png) -->
 
-![benchmark example result](https://github.com/johnviljoen/hybrid_a_star/tree/main/output/Case20.png?raw=true)
+<!-- ![benchmark example result](https://github.com/johnviljoen/hybrid_a_star/tree/main/output/Case20.png?raw=true) -->
+
+![take2](output/Case20.png)
 
 # Algorithm
 
