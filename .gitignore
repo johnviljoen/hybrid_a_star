@@ -1,4 +1,4 @@
-*.png
+# *.png
 
 # Mujoco
 MUJOCO_LOG.TXT
