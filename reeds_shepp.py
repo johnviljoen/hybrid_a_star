@@ -4,7 +4,7 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 from heapdict import heapdict
-from collision import grid_traj_collision_check
+from collision import is_traj_valid
 
 # parameters initiation
 STEP_SIZE = 0.2
@@ -13,7 +13,7 @@ PI = math.pi
 
 #### Functions for hybrid A* using RS ####
 
-def reeds_shepp_node(planner_params, car_params, current_node, goal_node, obstacles, obstacle_kdtree):
+def reeds_shepp_node(planner_params, car_params, current_node, goal_node, obstacle_kdtree):
 
     start_x, start_y, start_yaw = current_node["traj"][-1][0], current_node["traj"][-1][1], current_node["traj"][-1][2]
     goal_x, goal_y, goal_yaw = goal_node["traj"][-1][0], goal_node["traj"][-1][1], goal_node["traj"][-1][2]
@@ -38,7 +38,7 @@ def reeds_shepp_node(planner_params, car_params, current_node, goal_node, obstac
         path = cost_queue.popitem()[0]
         traj=[]
         traj = [[path.x[k],path.y[k],path.yaw[k]] for k in range(len(path.x))]
-        if not grid_traj_collision_check(car_params, traj, obstacles, obstacle_kdtree):
+        if is_traj_valid(car_params, traj, obstacle_kdtree):
             cost = reeds_shepp_cost(planner_params, car_params, current_node, path)
             node = {
                 "grid_index": goal_node["grid_index"],

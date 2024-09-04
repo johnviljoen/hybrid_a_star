@@ -71,7 +71,8 @@ def plan(planner_params, case_params, car_params):
         print(counter)
         
         # if empty open set then no solution available
-        if not open_set: return None
+        if not open_set: 
+            return None
 
         # bookkeeping
         current_node_index = cost_queue.popitem()[0]
@@ -80,7 +81,7 @@ def plan(planner_params, case_params, car_params):
         closed_set[current_node_index] = current_node
 
         # is the reeds shepp solution collision free?
-        rs_node = reeds_shepp_node(planner_params, car_params, current_node, goal_node, case_params["obs"], obstacle_kdtree)
+        rs_node = reeds_shepp_node(planner_params, car_params, current_node, goal_node, obstacle_kdtree)
 
         # if reeds shepp trajectory exists then we store solution and break the loop
         if rs_node: closed_set[rs_node["grid_index"]] = rs_node; break
@@ -93,7 +94,8 @@ def plan(planner_params, case_params, car_params):
             simulated_node = kinematic_simulation_node(planner_params, case_params, car_params, current_node, action, obstacle_kdtree, grid_bounds)
 
             # check if path is valid
-            if not simulated_node: continue
+            if not simulated_node: 
+                continue
 
             # Draw Simulated Node
             x,y,z =zip(*simulated_node["traj"])
@@ -111,11 +113,16 @@ def plan(planner_params, case_params, car_params):
                         open_set[simulated_node["grid_index"]] = simulated_node
                         cost_queue[simulated_node["grid_index"]] = max(simulated_node["cost"], planner_params["hybrid_cost"] * holonomic_cost_map[simulated_node["grid_index"][0]][simulated_node["grid_index"][1]])
 
+    #### just for testing ####
     plot_case(case_params, car_params, save=False)
-
     traj = np.vstack(rs_node["traj"])
     plt.plot(traj[:,0], traj[:,1])
+    for state in traj:
+        corners = get_corners(car_params, state[0], state[1], state[2])
+        plt.plot(corners[:,0], corners[:,1], 'black')
     plt.savefig('test.png', dpi=500)
+
+    #### End of testing ####
 
     print('fin')
 
@@ -124,9 +131,12 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from params import planner_params, car_params
     from tpcap_utils import read, plot_case    
+    from transforms import get_corners
 
-    case_num = 1
-    case_params = read(f"tpcap_cases/Case{case_num}.csv")
+    # case_num = 1
+    # case_params = read(f"tpcap_cases/Case{case_num}.csv")
+
+    case_params = read("test_case.csv")
 
     # plot to be sure
     plot_case(case_params, car_params, show=False, save=False, bare=False)
@@ -172,4 +182,7 @@ if __name__ == "__main__":
                 [(start_grid_index[1] + grid_bounds["ymin"]) * planner_params["xy_resolution"]], linewidths=1.0, color="green")
     plt.savefig('obstacle_grid_overlayed_on_case.png')
 
-    plan(planner_params, case_params, car_params)
+    traj = plan(planner_params, case_params, car_params)
+
+    print('fin')
+

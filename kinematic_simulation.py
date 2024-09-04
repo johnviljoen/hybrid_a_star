@@ -39,7 +39,7 @@ def _is_valid(case_params, car_params, traj, obstacle_kdtree):
                 return False
 
     # Check if Node is colliding with an obstacle
-    if not is_traj_valid(car_params, traj, case_params["obs"], obstacle_kdtree):
+    if not is_traj_valid(car_params, traj, obstacle_kdtree):
         return False
     return True
 

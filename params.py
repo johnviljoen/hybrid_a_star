@@ -10,6 +10,27 @@ car_params = {
     "max_steer": 0.5,
 }
 
+#### Testing equivalent setup to other hybrid a* ####
+
+LB = 2.3
+LF = 2.3
+max_steer = np.deg2rad(40)
+total_length = LB + LF
+wheel_base = 2.7
+width = 1.85
+front_hang = LF - wheel_base/2
+rear_hang = LB - wheel_base/2
+
+car_params = {
+    "wheel_base": wheel_base,
+    "width": width,
+    "front_hang": front_hang,
+    "rear_hang": rear_hang,
+    "max_steer": max_steer,
+}
+
+#### Testing end ####
+
 # bubble for fast detection of potential collisions later on
 car_params["total_length"] = car_params["rear_hang"] + car_params["wheel_base"] + car_params["front_hang"]
 car_params["bubble_radius"] = np.hypot(car_params["total_length"] / 2, car_params["width"] / 2)
@@ -21,6 +42,9 @@ car_params["corners"] = np.array([
     [- car_params["rear_hang"], - car_params["width"] / 2], # back right
     [car_params["wheel_base"] + car_params["front_hang"], - car_params["width"] / 2] # front right
 ])
+
+car_params["center_to_front"] = car_params["wheel_base"]/2 + car_params["front_hang"]
+car_params["center_to_back"] = car_params["wheel_base"]/2 + car_params["rear_hang"]
 
 #### Planner ####
 

@@ -57,9 +57,67 @@ def plot_case(case_params, car_params, filename=None, show=False, save=True, bar
     if show is True:
         plt.show()
 
+def write_case_csv(file_name, start_pose, end_pose, obstacles):
+    """
+    Write a CSV file that represents a scenario with a start pose, end pose, and obstacles.
+    
+    :param file_name: Name of the output CSV file.
+    :param start_pose: Tuple or list of (x0, y0, theta0) for the start pose.
+    :param end_pose: Tuple or list of (xf, yf, thetaf) for the end pose.
+    :param obstacles: List of numpy arrays, where each array has shape [n, 2] representing obstacle vertices.
+    """
+    # Combine start and end poses into a single list
+    start_end_pose = list(start_pose) + list(end_pose)
+    
+    # Number of obstacles
+    obs_num = len(obstacles)
+    
+    # Number of vertices for each obstacle
+    num_vertices = [obs.shape[0] for obs in obstacles]
+    
+    # Flatten the list of obstacle vertices
+    flattened_obstacles = []
+    for obs in obstacles:
+        flattened_obstacles.extend(obs.flatten())
+    
+    # Combine everything into a single list
+    csv_data = start_end_pose + [obs_num] + num_vertices + flattened_obstacles
+    
+    # Write to CSV file
+    with open(file_name, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(csv_data)
+
 if __name__ == "__main__":
 
-    case_num = 1
-    case_params = read(f"TPCAP_demo/BenchmarkCases/Case{case_num}.csv")
+    # case_num = 1
+    # case_params = read(f"TPCAP_demo/BenchmarkCases/Case{case_num}.csv")
 
+    # lets test create a case of reversing into a parking space
+    obstacles = [
+        np.array([ # left obstacle
+            [-3.8-2.5, 2.5],
+            [-3.8+2.5, 2.5],
+            [-3.8+2.5, -2.5],
+            [-3.8-2.5, -2.5],
+        ]),
+        np.array([ # right obstacle
+            [3.8-2.5, 2.5],
+            [3.8+2.5, 2.5],
+            [3.8+2.5, -2.5],
+            [3.8-2.5, -2.5]
+        ]),
+        np.array([
+            [-6, 10-0.4],
+            [6, 10-0.4],
+            [6, 10+3.4],
+            [-6, 10+3.4]
+        ])
+    ]
 
+    start_pose = (-5.0, 4.35, 0.0)
+    goal_pose = [0.0, 0.0, np.deg2rad(90)]
+
+    write_case_csv('test_case.csv', start_pose, goal_pose, obstacles)
+
+    
